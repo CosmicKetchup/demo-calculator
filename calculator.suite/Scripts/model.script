@@ -1,0 +1,25 @@
+﻿# Reduces incoming count by one (1), and returns new total to model.
+to decrementRemainingCount currentTotal
+	assert currentTotal is a number
+	if currentTotal is greater than 0 then return (currentTotal - 1)
+	else return currentTotal
+end decrementRemainingCount
+
+
+# Used for determining if division is possible when entering the 'Operators' state.
+to isDivisionPossible currentPossibility, nonZeroEntered
+	return (currentPossibility AND nonZeroEntered)
+end isDivisionPossible
+
+
+# Logs the total to the console output.
+on logToConsole rawInput
+	log rawInput
+end logToConsole
+
+
+# Used within the 'Numpad' state to reset the maximum number of digits on either side of an equation.
+to setRemainingDigits maxDigits
+	assert that maxDigits is a number
+	return maxDigits
+end setRemainingDigits

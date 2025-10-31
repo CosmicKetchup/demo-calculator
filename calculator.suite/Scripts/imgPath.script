@@ -1,0 +1,56 @@
+﻿put "system/" into sysPath
+put sysPath & "buttons/" into sysButtonPath
+put "calculator/" into calcPath
+put calcPath & "buttons/" into calcButtonPath
+put calcPath & "tabs/" into calcTabPath
+
+set images to {
+
+	### CALCULATOR
+	calc_clear_btn: calcButtonPath & "clear",
+	calc_decimal_btn: calcButtonPath & "decimal",
+	calc_history_tab: calcTabPath & "history",
+	calc_memstore_btn: calcButtonPath & "mem_store",
+	calc_menu_btn: calcButtonPath & "menu",
+	calc_numpad: calcButtonPath & "numpad",
+	calc_operators: calcButtonPath & "operators",
+	
+	### OPERATING SYSTEM
+	sys_close_window_btn: sysButtonPath & "close_window",
+	sys_max_window_btn: sysButtonPath & "maximize_window",
+	sys_restore_window_btn: sysButtonPath & "restore_window",
+	sys_taskbar_icon: sysPath & "taskbar_icon",
+
+}
+
+return images
+
+
+function forKey imgKey
+	put the duplicatePropertyKeyMode into origDPKM
+	put the strictProperties into origSP
+	set the duplicatePropertyKeyMode to error
+	set the strictProperties to true
+	
+	put imgPath().(imgKey) into imagePath
+	if the last character of imagePath is NOT "/"
+		put imagePath & "/" into imagePath
+	end if
+	
+	set the duplicatePropertyKeyMode to origDPKM
+	set the strictProperties to origSP
+	return imagePath
+end forKey
+
+
+function forNumber num
+	assert that (0..9 as a list) contains num
+	return imgPath.forKey("calc_numpad") & num & "/"
+end forNumber
+
+
+function forOperator op
+	put lowercase(op) into lc_op
+	assert that ["divide", "multiply", "subtract", "add", "equals"] contains lc_op
+	return imgPath.forKey("calc_operators") & lc_op & "/"
+end forOperator

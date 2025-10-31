@@ -1,0 +1,179 @@
+﻿// Adds one number to another
+function addedTo xInt, yInt
+	return performCalculation(yInt, "add", xInt)
+end addedTo
+
+
+// Validates default and hover states for all numpad buttons.
+on checkNumpad
+	moveTo [0, 0]
+	repeat for each item n in (0..9 as a list)
+		put imgPath.forNumber(n) into targetButton
+		moveTo targetButton & "default/"
+		waitFor 5, targetButton & "hover/"
+		log !"Validated the button states for the '[[n]]' button."
+	end repeat
+	
+	logSuccess "Validated all numpad button states."
+end checkNumpad
+
+
+// Validates default and hover states for all operator buttons.
+on checkOperators
+	moveTo [0, 0]
+	put ["divide", "multiply", "subtract", "add", "equals"] into calcOperators
+	repeat for each item op in calcOperators
+		put imgPath.forOperator(op) into targetOperator
+		moveTo targetOperator & "default/"
+		waitFor 5, targetOperator & "hover/"
+		log !"Validated the button states for the '[[op]]' button."
+	end repeat
+	
+	logSuccess "Validated all operator button states."
+end checkOperators
+
+
+// Searches for and clicks the INACTIVE Windows taskbar icon for the calculator.
+on clickInactiveTaskbarIcon
+	put helpers.taskbarRectangle() into taskbarRect
+	put imgPath.forKey("sys_taskbar_icon") & "inactive/" into inactiveIcon
+	click(image: inactiveIcon, searchRectangle: taskbarRect)
+end clickInactiveTaskbarIcon
+
+
+// Closes all instances of calculator through the taskbar icon's right-click menu.
+on closeProgram
+	put helpers.taskbarRectangle() into taskbarRect
+	put imgPath.forKey("sys_taskbar_icon") & "active/" into activeIcon
+	if imageFound(image: activeIcon, waitFor: 0, searchRectangle: taskbarRect)
+		rightClick foundImageLocation()
+		
+		// restrict search rectangle to right-click menu (rough estimate)
+		put foundImageLocation() + [-125, -250] into topLeftAnchor
+		put foundImageLocation() + [125, 0] into botRightAnchor
+		put [topLeftAnchor, botRightAnchor] into rightClickMenuRect
+		
+		click {text: "Close", caseSensitive: true, waitFor: 3, searchRectangle: rightClickMenuRect}
+	else
+		logWarning "Unable to find active taskbar icon for the calculator program."
+	end if
+end closeProgram
+
+
+// Returns the value currently displayed on system calculator.
+to displayedValue
+	put readText(resultsRectangle(), validCharacters: "0123456789e,.-+", contrast: on, contrastColor: "#000000") into value
+	if value is empty
+		put readText(resultsRectangle(), validCharacters: "0123456789e,.-+") into value
+	end if
+	return value
+end displayedValue
+
+
+function dividedBy xInt, yInt
+	return performCalculation(xInt, "divide", yint)
+end dividedBy
+
+
+// Enters each individual digit of the defined number into the system calculator.
+on enterNumber digits
+	put each character of digits as text into digitList
+	repeat for each item digit of digitList
+		if digit is a number
+		then pressNumber digit
+		else pressDecimalButton
+	end repeat
+end enterNumber
+
+
+// Launches the calculator by clicking on the pinned taskbar icon.
+-- Prerequisite: program is closed and icon is pinned to taskbar
+on launchProgram
+	clickInactiveTaskbarIcon
+	maximizeWindowIfNecessary
+end launchProgram
+
+on maximizeWindowIfNecessary
+	put remoteScreenSize() into rss
+	put rss * [0.85, 0] into topLeftAnchor
+	put rss * [1, 0.15] into botRightAnchor
+	put [topLeftAnchor, botRightAnchor] into topRightCornerRect
+	put imgPath.forKey("sys_restore_window_btn") into restoreWindowButton
+	
+	if NOT imageFound(image: restoreWindowButton, waitFor: 10)
+		put imgPath.forKey("sys_max_window_btn") into maximizeWindowButton
+		click maximizeWindowButton
+		assert that imageFound(image: restoreWindowButton, waitFor: 10, searchRectangle: topRightCornerRect)
+	end if
+end maximizeWindowIfNecessary
+
+
+function multipliedBy xInt, yInt
+	return performCalculation(yInt, "multiply", xInt)
+end multipliedBy
+
+
+// Performs the defined calculation against the calculator, returning the result displayed on-screen.
+-- Examples:
+--  log performCalculation(2, "add", 14)
+--  log performCalculation(5, "subtract", 8)
+--  log performCalculation(60, "divide", 1.5)
+--  log performCalculation(9, "multiply", 4)
+function performCalculation xInt, targetOperator, yInt
+	enterNumber xInt
+	pressOperator targetOperator
+	enterNumber yInt
+	pressOperator "equals"
+	wait 1 // allow display area to update within feed from remote machine
+	return displayedValue()
+end performCalculation
+
+
+on pressClearButton
+	put imgPath.forKey("calc_clear_btn") into clearButton
+	click clearButton
+end pressClearButton
+
+
+on pressDecimalButton
+	put imgPath.forKey("calc_decimal_btn") into decimalButton
+	click decimalButton
+end pressDecimalButton
+
+
+on pressNumber targetNumber
+	put imgPath.forNumber(targetNumber) into numberButton
+	click numberButton
+end pressNumber
+
+
+// Presses the defined operator button, regardless of state.
+on pressOperator targetOperator
+	put imgPath.forOperator(targetOperator) into operatorButton
+	click operatorButton
+end pressOperator
+
+
+// Returns a rectangle for the calculator's output area to be used in readText() calls.
+function resultsRectangle
+	if global resultsRectangle is empty
+		put imgPath.forKey("calc_menu_btn") into menuButton
+		put imageLocation(menuButton) + [-15, 80] into topLeftAnchor
+
+		put imgPath.forKey("calc_history_tab") into historyButton
+		put imageRectangle(historyButton).left into rightAnchor
+		put imgPath.forKey("calc_memstore_btn") into memoryStoreButton
+		put imageRectangle(memoryStoreButton).top - 30 into bottomAnchor
+		put [rightAnchor, bottomAnchor] into bottomRightAnchor
+
+		put [topLeftAnchor, bottomRightAnchor] into global resultsRectangle
+	end if
+	
+	return global resultsRectangle
+end resultsRectangle
+
+
+// Subtracts one number from another
+function subtractedFrom xInt, yInt
+	return performCalculation(yInt, "subtract", xInt)
+end subtractedFrom

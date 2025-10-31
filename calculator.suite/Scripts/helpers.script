@@ -1,0 +1,61 @@
+﻿// Returns true/false for whether an image that is currently on screen disappears.
+function imageDisappeared searchMetrics
+	set the strictProperties to false
+	
+	// if handler is called with only an image path, turn it into a property list
+	if searchMetrics is NOT a property list then set searchMetrics to (image: searchMetrics)
+	
+	if property image of searchMetrics is NOT empty OR if property imageName of searchMetrics is NOT empty
+		put true into isSearchingForImage
+		if property image of searchMetrics is NOT empty 
+			put property image of searchMetrics into targetElement
+		else
+			put property imageName of searchMetrics into targetElement
+		end if
+	else
+		put false into isSearchingForImage
+		put property text of searchMetrics into targetElement
+	end if
+	
+	// extract timeout value
+	put property waitFor of searchMetrics into timeoutValue
+	if timeoutValue is empty then set timeoutValue to 10
+	put now + timeoutValue into endTime
+	put 0 into property waitFor of searchMetrics // don't wait for it if it's not found
+	
+	repeat until the time is later than endTime
+		if imageFound(searchMetrics)
+			next repeat
+		else
+			if isSearchingForImage then 
+				log !<<The image '[[targetElement]]' is no longer visible on-screen.>>
+			else 
+				log !<<The text '[[targetElement]]' is no longer visible on-screen.>>
+			end if
+			
+			return true
+		end if
+	end repeat
+	
+	if isSearchingForImage 
+		logWarning !<<The image '[[targetElement]]'still found after [[timeoutValue]] second(s).>>
+	else 
+		logWarning !<<Text '[[targetElement]]' still found after [[timeoutValue]] second(s).>>
+	end if
+	
+	return false
+end imageDisappeared
+
+
+# Returns a rectangle representing the standard Windows 10 taskbar area.
+-- Notes: System scale is set to 100% and large taskbar icons are enabled.
+function taskbarRectangle
+	if global taskBarRect is empty
+		put remoteScreenSize() into screenResolution
+		put [0, screenResolution.height - 40] into topLeftAnchor // (0, 1040) for 1080p
+		put screenResolution into botRightAnchor
+		put [topLeftAnchor, botRightAnchor] into global taskBarRect
+	end if
+	
+	return global taskBarRect
+end taskbarRectangle
